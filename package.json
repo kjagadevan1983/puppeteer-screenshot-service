@@ -1,12 +1,16 @@
 {
   "name": "tradingview-screenshot-api",
   "version": "1.0.0",
+  "description": "A Puppeteer microservice to capture TradingView chart screenshots",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": "^21.3.8"
-  }
+    "puppeteer": "^21.3.8",
+    "archiver": "^6.0.0"
+  },
+  "author": "kjagadevan1983",
+  "license": "MIT"
 }
