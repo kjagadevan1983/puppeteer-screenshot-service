@@ -9,7 +9,6 @@
   "dependencies": {
     "express": "^4.18.2",
     "puppeteer": "^21.3.8",
-    "archiver": "^6.0.0"
   },
   "author": "kjagadevan1983",
   "license": "MIT"
