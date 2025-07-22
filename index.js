@@ -4,55 +4,50 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
+
+const SYMBOL = 'SPX';
+const INTERVALS = ['1', '5', '15', '30']; // TradingView intervals (minutes)
 
 app.get('/screenshot', async (req, res) => {
-  const symbol = req.query.symbol || 'SPX';
-  const intervals = ['1', '5', '15', '30'];
-  const timestamp = Date.now();
-  const outputDir = path.join(__dirname, 'screenshots', String(timestamp));
-
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const outputDir = path.join(__dirname, 'output', timestamp);
   fs.mkdirSync(outputDir, { recursive: true });
 
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox'],
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
-  const imagePaths = [];
-
-  for (const interval of intervals) {
+  try {
     const page = await browser.newPage();
-    const url = `https://www.tradingview.com/chart/?symbol=${symbol}&interval=${interval}`;
-    await page.goto(url, { waitUntil: 'networkidle2' });
-    await page.waitForSelector('[data-name="legend-source-item"]');
 
-    const filename = `${symbol}_${interval}min.png`;
-    const filePath = path.join(outputDir, filename);
-    await page.screenshot({ path: filePath, fullPage: true });
-    await page.close();
+    for (const interval of INTERVALS) {
+      const url = `https://www.tradingview.com/chart/?symbol=${SYMBOL}&interval=${interval}`;
+      await page.goto(url, { waitUntil: 'networkidle2' });
 
-    imagePaths.push({
-      interval,
-      file: filename,
-      path: `/screenshots/${timestamp}/${filename}`,
-      absolute: filePath,
+      await page.waitForTimeout(6000); // Wait for chart to load fully
+
+      const screenshotPath = path.join(outputDir, `${SYMBOL}_${interval}min.png`);
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      console.log(`Captured ${interval}min chart`);
+    }
+
+    await browser.close();
+
+    res.json({
+      message: 'Screenshots captured successfully',
+      folder: `output/${timestamp}`,
+      files: fs.readdirSync(outputDir)
     });
+
+  } catch (err) {
+    await browser.close();
+    console.error('Screenshot error:', err);
+    res.status(500).json({ error: 'Screenshot capture failed' });
   }
-
-  await browser.close();
-
-  res.json({
-    symbol,
-    timestamp,
-    count: imagePaths.length,
-    folder: `/screenshots/${timestamp}`,
-    images: imagePaths,
-  });
 });
 
-app.use('/screenshots', express.static(path.join(__dirname, 'screenshots')));
-
-app.listen(port, () => {
-  console.log(`Screenshot service running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`📸 Puppeteer Screenshot API running at http://localhost:${PORT}`);
 });
