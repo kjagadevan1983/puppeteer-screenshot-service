@@ -35,9 +35,19 @@ const browser = await puppeteer.launch({
 
     for (const interval of INTERVALS) {
       const url = `https://www.tradingview.com/chart/?symbol=${SYMBOL}&interval=${interval}`;
-      await page.goto(url, { waitUntil: 'networkidle2' });
+      let loaded = false;
+for (let attempt = 0; attempt < 3 && !loaded; attempt++) {
+  try {
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
+    loaded = true;
+  } catch (err) {
+    console.warn(`Attempt ${attempt + 1} failed for ${url}`, err);
+    await page.waitForTimeout(3000);
+  }
+}
+if (!loaded) throw new Error(`Failed to load ${url} after retries`);
 
-      await page.waitForTimeout(6000); // Wait for chart to load fully
+      await page.waitForTimeout(12000); // Wait for chart to load fully
 
       const screenshotPath = path.join(outputDir, `${SYMBOL}_${interval}min.png`);
       await page.screenshot({ path: screenshotPath, fullPage: true });
@@ -54,9 +64,13 @@ const browser = await puppeteer.launch({
 
   } catch (err) {
     await browser.close();
-    console.error('Screenshot error:', err);
+    console.error('Screenshot error:', err.stack || err);
     res.status(500).json({ error: 'Screenshot capture failed' });
   }
+});
+
+app.get('/', (req, res) => {
+  res.send('✅ Puppeteer Service is Running');
 });
 
 app.listen(PORT, () => {
