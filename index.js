@@ -16,6 +16,7 @@ app.get('/screenshot', async (req, res) => {
 
 const browser = await puppeteer.launch({
   headless: 'new',
+  executablePath: process.env.CHROMIUM_PATH || puppeteer.executablePath(),
   args: [
     '--no-sandbox',
     '--disable-setuid-sandbox',
