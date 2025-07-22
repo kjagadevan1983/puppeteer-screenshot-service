@@ -14,10 +14,21 @@ app.get('/screenshot', async (req, res) => {
   const outputDir = path.join(__dirname, 'output', timestamp);
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+const browser = await puppeteer.launch({
+  headless: 'new',
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--disable-software-rasterizer',
+    '--disable-features=IsolateOrigins,site-per-process',
+    '--no-zygote',
+    '--single-process',
+    '--no-first-run',
+    '--no-default-browser-check',
+  ],
+});
 
   try {
     const page = await browser.newPage();
